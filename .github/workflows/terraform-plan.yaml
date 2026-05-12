@@ -4,10 +4,11 @@ on:
   pull_request:
     paths:
       - "terraform/**"
+      - "ansible/**"
 
 jobs:
   plan:
-    runs-on: self-hosted
+    runs-on: [self-hosted, homelab]
 
     defaults:
       run:
@@ -23,14 +24,27 @@ jobs:
       - name: Terraform fmt
         run: terraform fmt -check -recursive
 
-      - name: Terraform init
+      - name: Terraform init (homelab)
         run: terraform -chdir=envs/homelab init -input=false
 
-      - name: Terraform validate
+      - name: Terraform validate (homelab)
         run: terraform -chdir=envs/homelab validate
 
-      - name: Terraform plan
+      - name: Terraform plan (homelab)
         run: terraform -chdir=envs/homelab plan -input=false -no-color
+        env:
+          TF_VAR_proxmox_endpoint: ${{ secrets.PROXMOX_ENDPOINT }}
+          TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+
+      - name: Terraform init (runners)
+        run: terraform -chdir=envs/runners init -input=false
+
+      - name: Terraform validate (runners)
+        run: terraform -chdir=envs/runners validate
+
+      - name: Terraform plan (runners)
+        run: terraform -chdir=envs/runners plan -input=false -no-color
         env:
           TF_VAR_proxmox_endpoint: ${{ secrets.PROXMOX_ENDPOINT }}
           TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}

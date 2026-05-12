@@ -14,7 +14,7 @@ on:
 
 jobs:
   packer-build:
-    runs-on: self-hosted
+    runs-on: [self-hosted, homelab]
 
     defaults:
       run:

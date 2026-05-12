@@ -5,7 +5,7 @@ on:
 
 jobs:
   apply:
-    runs-on: self-hosted
+    runs-on: [self-hosted, homelab]
 
     defaults:
       run:
@@ -21,11 +21,21 @@ jobs:
       - name: Terraform fmt
         run: terraform fmt -check -recursive
 
-      - name: Terraform init
+      - name: Terraform init (homelab)
         run: terraform -chdir=envs/homelab init -input=false
 
-      - name: Terraform apply
+      - name: Terraform apply (homelab)
         run: terraform -chdir=envs/homelab apply -auto-approve -input=false -no-color
+        env:
+          TF_VAR_proxmox_endpoint: ${{ secrets.PROXMOX_ENDPOINT }}
+          TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+
+      - name: Terraform init (runners)
+        run: terraform -chdir=envs/runners init -input=false
+
+      - name: Terraform apply (runners)
+        run: terraform -chdir=envs/runners apply -auto-approve -input=false -no-color
         env:
           TF_VAR_proxmox_endpoint: ${{ secrets.PROXMOX_ENDPOINT }}
           TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
