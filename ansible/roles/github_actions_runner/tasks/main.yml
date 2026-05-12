@@ -1,0 +1,149 @@
+---
+- name: Assert GitHub repository is configured
+  ansible.builtin.assert:
+    that:
+      - github_actions_runner_github_owner | length > 0
+      - github_actions_runner_github_repo | length > 0
+    fail_msg: "Set github_actions_runner_github_owner and github_actions_runner_github_repo (group_vars or extra-vars)."
+
+- name: Check runner configuration file (before optional cleanup)
+  ansible.builtin.stat:
+    path: "{{ github_actions_runner_install_dir }}/.runner"
+  register: github_actions_runner_stat_before
+
+- name: Stop and remove existing runner when forced re-register
+  when:
+    - github_actions_runner_force_reregister | bool
+    - github_actions_runner_stat_before.stat.exists
+  block:
+    - name: Stop runner service
+      ansible.builtin.shell: |
+        set -e
+        cd "{{ github_actions_runner_install_dir }}"
+        ./svc.sh stop || true
+        ./svc.sh uninstall || true
+      changed_when: true
+
+    - name: Remove runner registration metadata
+      ansible.builtin.file:
+        path: "{{ github_actions_runner_install_dir }}/.runner"
+        state: absent
+
+- name: Check runner configuration file (after cleanup)
+  ansible.builtin.stat:
+    path: "{{ github_actions_runner_install_dir }}/.runner"
+  register: github_actions_runner_stat_after
+
+- name: Mark runner as needing GitHub registration
+  ansible.builtin.set_fact:
+    github_actions_runner_needs_register: true
+  when: not github_actions_runner_stat_after.stat.exists
+
+- name: Mark runner as already registered
+  ansible.builtin.set_fact:
+    github_actions_runner_needs_register: false
+  when: github_actions_runner_stat_after.stat.exists
+
+- name: Assert PAT for registration token is available when registering
+  when: github_actions_runner_needs_register | bool
+  ansible.builtin.assert:
+    that:
+      - github_token is defined
+      - github_token | length > 0
+    fail_msg: "Provide github_token when the runner is not yet registered (e.g. -e github_token=$GITHUB_TOKEN)."
+
+- name: Install OS packages for runner
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - tar
+      - jq
+      - unzip
+    state: present
+    update_cache: true
+
+- name: Ensure install directory exists
+  ansible.builtin.file:
+    path: "{{ github_actions_runner_install_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download actions-runner bundle
+  when: github_actions_runner_needs_register | bool
+  ansible.builtin.get_url:
+    url: "{{ github_actions_runner_download_url }}"
+    dest: "/tmp/actions-runner-{{ github_actions_runner_version }}.tar.gz"
+    mode: "0644"
+    timeout: 120
+
+- name: Unarchive runner
+  when: github_actions_runner_needs_register | bool
+  ansible.builtin.unarchive:
+    src: "/tmp/actions-runner-{{ github_actions_runner_version }}.tar.gz"
+    dest: "{{ github_actions_runner_install_dir }}"
+    remote_src: true
+    creates: "{{ github_actions_runner_install_dir }}/config.sh"
+
+- name: Request Actions runner registration token
+  when: github_actions_runner_needs_register | bool
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/{{ github_actions_runner_github_owner }}/{{ github_actions_runner_github_repo }}/actions/runners/registration-token"
+    method: POST
+    body_format: json
+    body: {}
+    headers:
+      Accept: application/vnd.github+json
+      X-GitHub-Api-Version: "2022-11-28"
+      Authorization: "Bearer {{ github_token }}"
+    status_code: [201]
+    return_content: true
+  register: github_actions_runner_registration
+  no_log: true
+
+- name: Configure runner (unattended)
+  when: github_actions_runner_needs_register | bool
+  ansible.builtin.command:
+    argv:
+      - ./config.sh
+      - --unattended
+      - --url
+      - "https://github.com/{{ github_actions_runner_github_owner }}/{{ github_actions_runner_github_repo }}"
+      - --token
+      - "{{ github_actions_runner_registration.json.token }}"
+      - --labels
+      - "{{ github_actions_runner_labels }}"
+      - --name
+      - "{{ github_actions_runner_name }}"
+      - --replace
+    chdir: "{{ github_actions_runner_install_dir }}"
+  changed_when: true
+  no_log: true
+
+- name: Check runner is configured before managing service
+  ansible.builtin.stat:
+    path: "{{ github_actions_runner_install_dir }}/.runner"
+  register: github_actions_runner_stat_final
+
+- name: Install systemd service for runner
+  when: github_actions_runner_stat_final.stat.exists
+  ansible.builtin.command:
+    argv:
+      - ./svc.sh
+      - install
+    chdir: "{{ github_actions_runner_install_dir }}"
+  register: github_actions_runner_svc_install
+  changed_when: github_actions_runner_needs_register | bool
+  failed_when: github_actions_runner_svc_install.rc not in [0]
+
+- name: Start runner service
+  when: github_actions_runner_stat_final.stat.exists
+  ansible.builtin.command:
+    argv:
+      - ./svc.sh
+      - start
+    chdir: "{{ github_actions_runner_install_dir }}"
+  changed_when: false
+  failed_when: false

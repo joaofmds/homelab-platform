@@ -4,3 +4,6 @@
 terraform.tfvars
 crash.log
 *.tfplan
+ansible/**/*.retry
+ansible/**/vault.yml
+ansible/**/secrets.yml

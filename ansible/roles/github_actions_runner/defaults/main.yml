@@ -1,0 +1,18 @@
+# Pin the runner version: https://github.com/actions/runner/releases
+github_actions_runner_version: "2.321.0"
+github_actions_runner_install_dir: /opt/actions-runner
+github_actions_runner_download_url: >-
+  https://github.com/actions/runner/releases/download/v{{ github_actions_runner_version }}/actions-runner-linux-x64-{{ github_actions_runner_version }}.tar.gz
+
+# Target repository for self-hosted runners (repository scope).
+github_actions_runner_github_owner: ""
+github_actions_runner_github_repo: ""
+
+# Comma-separated list for ./config.sh --labels (include homelab so workflows can match [self-hosted, homelab]).
+github_actions_runner_labels: "homelab"
+
+# Defaults to inventory_hostname; override per host if needed.
+github_actions_runner_name: "{{ inventory_hostname }}"
+
+# Set true to remove .runner and re-register (requires fresh API token).
+github_actions_runner_force_reregister: false

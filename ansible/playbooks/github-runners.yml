@@ -1,0 +1,13 @@
+---
+# Install and register self-hosted runners. Requires:
+#   - Terraform VMs created and SSH reachable as ansible_user
+#   - PAT with permission to create registration tokens for this repo
+#
+#   GITHUB_TOKEN=ghp_xxx ansible-playbook -i inventory playbooks/github-runners.yml -e github_token=$GITHUB_TOKEN
+#
+# ansible-playbook --check is not reliable for this role (downloads, registration); use a staging VM first.
+- name: Configure GitHub Actions self-hosted runners
+  hosts: runners
+  gather_facts: true
+  roles:
+    - role: github_actions_runner
