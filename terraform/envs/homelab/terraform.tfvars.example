@@ -1,0 +1,13 @@
+proxmox_endpoint  = "https://192.168.1.10:8006/api2/json"
+proxmox_api_token = "terraform@pve!github-actions=CHANGE_ME"
+
+# Prefer false when the Proxmox API presents a trusted certificate.
+proxmox_tls_insecure = true
+
+ssh_public_key = "ssh-ed25519 CHANGE_ME"
+
+# Optional overrides (defaults match a typical homelab Packer template).
+# kubernetes_template_vm_id = 9000
+# kubernetes_dns_servers    = ["192.168.1.1", "1.1.1.1"]
+# kubernetes_datastore_id   = "local-lvm"
+# kubernetes_network_bridge = "vmbr0"
