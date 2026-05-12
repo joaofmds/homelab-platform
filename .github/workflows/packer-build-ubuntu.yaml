@@ -1,0 +1,80 @@
+name: Build Ubuntu Proxmox Template
+
+on:
+  workflow_dispatch:
+    inputs:
+      proxmox_node:
+        description: "Proxmox node to build template on"
+        required: true
+        default: "pve1"
+        type: choice
+        options:
+          - pve1
+          - pve2
+
+jobs:
+  packer-build:
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        working-directory: packer/ubuntu-2404
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Packer
+        uses: hashicorp/setup-packer@main
+
+      - name: Inject password hash into autoinstall user-data
+        run: |
+          sed -i "s|__SSH_PASSWORD_HASH__|${PACKER_SSH_PASSWORD_HASH}|g" http/user-data
+        env:
+          PACKER_SSH_PASSWORD_HASH: ${{ secrets.PACKER_SSH_PASSWORD_HASH }}
+
+      - name: Packer init
+        run: packer init .
+
+      - name: Packer fmt
+        run: packer fmt -check .
+
+      - name: Packer validate
+        run: |
+          packer validate \
+            -var "proxmox_api_url=${PROXMOX_API_URL}" \
+            -var "proxmox_api_token_id=${PROXMOX_API_TOKEN_ID}" \
+            -var "proxmox_api_token_secret=${PROXMOX_API_TOKEN_SECRET}" \
+            -var "proxmox_node=${PROXMOX_NODE}" \
+            -var "ssh_username=packer" \
+            -var "ssh_password=${PACKER_SSH_PASSWORD}" \
+            -var "ssh_password_hash=${PACKER_SSH_PASSWORD_HASH}" \
+            .
+        env:
+          PROXMOX_API_URL: ${{ secrets.PROXMOX_API_URL }}
+          PROXMOX_API_TOKEN_ID: ${{ secrets.PROXMOX_API_TOKEN_ID }}
+          PROXMOX_API_TOKEN_SECRET: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+          PROXMOX_NODE: ${{ inputs.proxmox_node }}
+          PACKER_SSH_PASSWORD: ${{ secrets.PACKER_SSH_PASSWORD }}
+          PACKER_SSH_PASSWORD_HASH: ${{ secrets.PACKER_SSH_PASSWORD_HASH }}
+
+      - name: Packer build
+        run: |
+          packer build \
+            -var "proxmox_api_url=${PROXMOX_API_URL}" \
+            -var "proxmox_api_token_id=${PROXMOX_API_TOKEN_ID}" \
+            -var "proxmox_api_token_secret=${PROXMOX_API_TOKEN_SECRET}" \
+            -var "proxmox_node=${PROXMOX_NODE}" \
+            -var "template_id=9000" \
+            -var "template_name=ubuntu-2404-k8s-template" \
+            -var "ssh_username=packer" \
+            -var "ssh_password=${PACKER_SSH_PASSWORD}" \
+            -var "ssh_password_hash=${PACKER_SSH_PASSWORD_HASH}" \
+            .
+        env:
+          PROXMOX_API_URL: ${{ secrets.PROXMOX_API_URL }}
+          PROXMOX_API_TOKEN_ID: ${{ secrets.PROXMOX_API_TOKEN_ID }}
+          PROXMOX_API_TOKEN_SECRET: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
+          PROXMOX_NODE: ${{ inputs.proxmox_node }}
+          PACKER_SSH_PASSWORD: ${{ secrets.PACKER_SSH_PASSWORD }}
+          PACKER_SSH_PASSWORD_HASH: ${{ secrets.PACKER_SSH_PASSWORD_HASH }}
