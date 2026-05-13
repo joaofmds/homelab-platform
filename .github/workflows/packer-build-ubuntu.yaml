@@ -1,20 +1,27 @@
+# Secrets (repositório): alinhar com Terraform runners onde possível.
+#   PROXMOX_PVE1_ENDPOINT, PROXMOX_PVE1_API_TOKEN  (token completo user@realm!id=secret)
+#   PROXMOX_PVE2_ENDPOINT, PROXMOX_PVE2_API_TOKEN
+#   PACKER_SSH_PASSWORD (único; o hash para user-data é gerado no job com openssl passwd -6)
+#
+# Cada job corre no runner com label pve1-runner ou pve2-runner e usa a API desse host.
 name: Build Ubuntu Proxmox Template
 
 on:
   workflow_dispatch:
-    inputs:
-      proxmox_node:
-        description: "Proxmox node to build template on"
-        required: true
-        default: "pve1"
-        type: choice
-        options:
-          - pve1
-          - pve2
 
 jobs:
   packer-build:
-    runs-on: [self-hosted, homelab]
+    name: Packer (${{ matrix.proxmox_node }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - proxmox_node: pve1
+            runner_label: pve1-runner
+          - proxmox_node: pve2
+            runner_label: pve2-runner
+
+    runs-on: [self-hosted, homelab, ${{ matrix.runner_label }}]
 
     defaults:
       run:
@@ -24,14 +31,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure Proxmox API for this host
+        run: |
+          set -euo pipefail
+          case "${{ matrix.proxmox_node }}" in
+            pve1)
+              echo "PROXMOX_API_URL=${{ secrets.PROXMOX_PVE1_ENDPOINT }}" >> "$GITHUB_ENV"
+              TOKEN="${{ secrets.PROXMOX_PVE1_API_TOKEN }}"
+              ;;
+            pve2)
+              echo "PROXMOX_API_URL=${{ secrets.PROXMOX_PVE2_ENDPOINT }}" >> "$GITHUB_ENV"
+              TOKEN="${{ secrets.PROXMOX_PVE2_API_TOKEN }}"
+              ;;
+            *)
+              echo "Unknown matrix.proxmox_node"
+              exit 1
+              ;;
+          esac
+          echo "PROXMOX_NODE=${{ matrix.proxmox_node }}" >> "$GITHUB_ENV"
+          echo "PROXMOX_API_TOKEN_ID=${TOKEN%=*}" >> "$GITHUB_ENV"
+          echo "PROXMOX_API_TOKEN_SECRET=${TOKEN#*=}" >> "$GITHUB_ENV"
+
       - name: Install Packer
         uses: hashicorp/setup-packer@main
 
       - name: Inject password hash into autoinstall user-data
         run: |
-          sed -i "s|__SSH_PASSWORD_HASH__|${PACKER_SSH_PASSWORD_HASH}|g" http/user-data
+          set -euo pipefail
+          HASH=$(printf '%s' "${PACKER_SSH_PASSWORD}" | openssl passwd -6 -stdin)
+          export HASH
+          python3 - <<'PY'
+          import os
+          import pathlib
+
+          h = os.environ["HASH"]
+          p = pathlib.Path("http/user-data")
+          p.write_text(p.read_text().replace("__SSH_PASSWORD_HASH__", h))
+          PY
         env:
-          PACKER_SSH_PASSWORD_HASH: ${{ secrets.PACKER_SSH_PASSWORD_HASH }}
+          PACKER_SSH_PASSWORD: ${{ secrets.PACKER_SSH_PASSWORD }}
 
       - name: Packer init
         run: packer init .
@@ -48,15 +86,9 @@ jobs:
             -var "proxmox_node=${PROXMOX_NODE}" \
             -var "ssh_username=packer" \
             -var "ssh_password=${PACKER_SSH_PASSWORD}" \
-            -var "ssh_password_hash=${PACKER_SSH_PASSWORD_HASH}" \
             .
         env:
-          PROXMOX_API_URL: ${{ secrets.PROXMOX_API_URL }}
-          PROXMOX_API_TOKEN_ID: ${{ secrets.PROXMOX_API_TOKEN_ID }}
-          PROXMOX_API_TOKEN_SECRET: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
-          PROXMOX_NODE: ${{ inputs.proxmox_node }}
           PACKER_SSH_PASSWORD: ${{ secrets.PACKER_SSH_PASSWORD }}
-          PACKER_SSH_PASSWORD_HASH: ${{ secrets.PACKER_SSH_PASSWORD_HASH }}
 
       - name: Packer build
         run: |
@@ -69,12 +101,6 @@ jobs:
             -var "template_name=ubuntu-2404-k8s-template" \
             -var "ssh_username=packer" \
             -var "ssh_password=${PACKER_SSH_PASSWORD}" \
-            -var "ssh_password_hash=${PACKER_SSH_PASSWORD_HASH}" \
             .
         env:
-          PROXMOX_API_URL: ${{ secrets.PROXMOX_API_URL }}
-          PROXMOX_API_TOKEN_ID: ${{ secrets.PROXMOX_API_TOKEN_ID }}
-          PROXMOX_API_TOKEN_SECRET: ${{ secrets.PROXMOX_API_TOKEN_SECRET }}
-          PROXMOX_NODE: ${{ inputs.proxmox_node }}
           PACKER_SSH_PASSWORD: ${{ secrets.PACKER_SSH_PASSWORD }}
-          PACKER_SSH_PASSWORD_HASH: ${{ secrets.PACKER_SSH_PASSWORD_HASH }}
