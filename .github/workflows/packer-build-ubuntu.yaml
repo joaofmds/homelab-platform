@@ -11,7 +11,7 @@ on:
 
 jobs:
   packer-build:
-    name: Packer (${{ matrix.proxmox_node }})
+    name: "Packer (${{ matrix.proxmox_node }})"
     strategy:
       fail-fast: false
       matrix:
@@ -20,8 +20,10 @@ jobs:
             runner_label: pve1-runner
           - proxmox_node: pve2
             runner_label: pve2-runner
-
-    runs-on: [self-hosted, homelab, ${{ matrix.runner_label }}]
+    runs-on:
+      - self-hosted
+      - homelab
+      - ${{ matrix.runner_label }}
 
     defaults:
       run:
