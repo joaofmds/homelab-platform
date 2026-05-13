@@ -5,10 +5,18 @@
 #   PROXMOX_PVE2_ENDPOINT, PROXMOX_PVE2_API_TOKEN
 #   PACKER_SSH_PASSWORD (único; o hash para user-data é gerado no job com openssl passwd -6)
 #
+# workflow_dispatch: "replace_existing_template" (default true) remove a VM com o template_id
+# nesse nó antes do build, para poder voltar a criar o mesmo VMID (ex.: 9000).
+#
 name: Build Ubuntu Proxmox Template
 
 on:
   workflow_dispatch:
+    inputs:
+      replace_existing_template:
+        description: "Apagar VM com template_id neste nó antes do Packer (necessário para rebuild do mesmo VMID)"
+        type: boolean
+        default: true
 
 jobs:
   packer-build:
@@ -19,8 +27,10 @@ jobs:
         include:
           - proxmox_node: pve1
             runner_label: pve1-runner
+            template_id: 9000
           - proxmox_node: pve2
             runner_label: pve2-runner
+            template_id: 9000
     runs-on:
       - self-hosted
       - homelab
@@ -54,6 +64,31 @@ jobs:
           echo "PROXMOX_NODE=${{ matrix.proxmox_node }}" >> "$GITHUB_ENV"
           echo "PROXMOX_API_TOKEN_ID=${TOKEN%=*}" >> "$GITHUB_ENV"
           echo "PROXMOX_API_TOKEN_SECRET=${TOKEN#*=}" >> "$GITHUB_ENV"
+          echo "TEMPLATE_VMID=${{ matrix.template_id }}" >> "$GITHUB_ENV"
+
+      - name: Remove existing Packer VM if opted in
+        if: ${{ inputs.replace_existing_template }}
+        run: |
+          set -euo pipefail
+          AUTH_HEADER="Authorization: PVEAPIToken=${PROXMOX_API_TOKEN_ID}=${PROXMOX_API_TOKEN_SECRET}"
+          code=$(curl -skS -o /dev/null -w "%{http_code}" -H "$AUTH_HEADER" \
+            "${PROXMOX_API_URL}/nodes/${PROXMOX_NODE}/qemu/${TEMPLATE_VMID}/config")
+          if [ "$code" != "200" ]; then
+            echo "VM ${TEMPLATE_VMID} not found on ${PROXMOX_NODE} (HTTP ${code}); nothing to remove."
+            exit 0
+          fi
+          echo "Stopping VM ${TEMPLATE_VMID}..."
+          curl -skS -H "$AUTH_HEADER" -X POST \
+            "${PROXMOX_API_URL}/nodes/${PROXMOX_NODE}/qemu/${TEMPLATE_VMID}/status/stop" \
+            --data "timeout=120" || true
+          sleep 20
+          echo "Deleting VM ${TEMPLATE_VMID}..."
+          del=$(curl -skS -o /tmp/pve_del.json -w "%{http_code}" -H "$AUTH_HEADER" -X DELETE \
+            "${PROXMOX_API_URL}/nodes/${PROXMOX_NODE}/qemu/${TEMPLATE_VMID}")
+          if [ "$del" != "200" ]; then
+            echo "DELETE failed HTTP ${del}"; cat /tmp/pve_del.json; exit 1
+          fi
+          echo "Removed VM ${TEMPLATE_VMID}."
 
       - name: Install Packer
         uses: hashicorp/setup-packer@main
@@ -87,6 +122,7 @@ jobs:
             -var "proxmox_api_token_id=${PROXMOX_API_TOKEN_ID}" \
             -var "proxmox_api_token_secret=${PROXMOX_API_TOKEN_SECRET}" \
             -var "proxmox_node=${PROXMOX_NODE}" \
+            -var "template_id=${{ matrix.template_id }}" \
             -var "ssh_username=packer" \
             -var "ssh_password=${PACKER_SSH_PASSWORD}" \
             .
@@ -100,7 +136,7 @@ jobs:
             -var "proxmox_api_token_id=${PROXMOX_API_TOKEN_ID}" \
             -var "proxmox_api_token_secret=${PROXMOX_API_TOKEN_SECRET}" \
             -var "proxmox_node=${PROXMOX_NODE}" \
-            -var "template_id=9000" \
+            -var "template_id=${{ matrix.template_id }}" \
             -var "template_name=ubuntu-2404-k8s-template" \
             -var "ssh_username=packer" \
             -var "ssh_password=${PACKER_SSH_PASSWORD}" \

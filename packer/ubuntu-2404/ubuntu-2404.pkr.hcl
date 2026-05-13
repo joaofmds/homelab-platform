@@ -13,14 +13,18 @@ source "proxmox-iso" "ubuntu_2404" {
   token                    = var.proxmox_api_token_secret
   insecure_skip_tls_verify = true
 
-  node                 = var.proxmox_node
-  vm_id                = var.template_id
-  vm_name              = var.template_name
-  template_description = "Ubuntu 24.04 Kubernetes base image built with Packer"
+  node                   = var.proxmox_node
+  vm_id                  = var.template_id
+  vm_name                = var.template_name
+  template_description   = "Ubuntu 24.04 Kubernetes base image built with Packer"
 
-  iso_url          = "https://releases.ubuntu.com/releases/24.04/ubuntu-24.04.3-live-server-amd64.iso"
-  iso_checksum     = "none"
-  iso_storage_pool = "local"
+  boot_iso {
+    type               = "ide"
+    iso_url            = var.iso_url
+    iso_checksum       = var.iso_checksum
+    iso_storage_pool   = var.iso_storage_pool
+    unmount            = true
+  }
 
   http_directory = "http"
 
@@ -59,8 +63,6 @@ source "proxmox-iso" "ubuntu_2404" {
   ssh_username = var.ssh_username
   ssh_password = var.ssh_password
   ssh_timeout  = "30m"
-
-  unmount_iso = true
 }
 
 build {

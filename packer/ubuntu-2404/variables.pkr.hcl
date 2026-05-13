@@ -23,6 +23,24 @@ variable "proxmox_node" {
   default     = "pve"
 }
 
+variable "iso_url" {
+  type        = string
+  description = "Ubuntu live-server ISO URL (checksum must match iso_checksum)."
+  default     = "https://releases.ubuntu.com/releases/24.04/ubuntu-24.04.3-live-server-amd64.iso"
+}
+
+variable "iso_checksum" {
+  type        = string
+  description = "Checksum for iso_url; use sha256:... from https://releases.ubuntu.com/24.04/SHA256SUMS"
+  default     = "sha256:c3514bf0056180d09376462a7a1b4f213c1d6e8ea67fae5c25099c6fd3d8274b"
+}
+
+variable "iso_storage_pool" {
+  type        = string
+  description = "Proxmox storage pool for uploading the boot ISO (boot_iso)."
+  default     = "local"
+}
+
 variable "template_id" {
   type        = number
   description = "VMID to assign to the Proxmox template (must be unused on the cluster)."
