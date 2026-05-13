@@ -1,5 +1,6 @@
 name: Terraform Plan
 
+# Jobs correm apenas em runners self-hosted com label homelab (ver Ansible inventory).
 on:
   pull_request:
     paths:
@@ -8,7 +9,9 @@ on:
 
 jobs:
   plan:
-    runs-on: [self-hosted, homelab]
+    runs-on:
+      - self-hosted
+      - homelab
 
     defaults:
       run:

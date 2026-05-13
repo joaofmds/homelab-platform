@@ -1,11 +1,14 @@
 name: Terraform Apply
 
+# Jobs correm apenas em runners self-hosted com label homelab (ver Ansible inventory).
 on:
   workflow_dispatch:
 
 jobs:
   apply:
-    runs-on: [self-hosted, homelab]
+    runs-on:
+      - self-hosted
+      - homelab
 
     defaults:
       run:

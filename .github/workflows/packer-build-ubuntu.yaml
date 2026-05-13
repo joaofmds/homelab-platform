@@ -1,9 +1,10 @@
+# Self-hosted: cada job exige self-hosted + homelab + label do nó (pve1-runner / pve2-runner).
+#
 # Secrets (repositório): alinhar com Terraform runners onde possível.
 #   PROXMOX_PVE1_ENDPOINT, PROXMOX_PVE1_API_TOKEN  (token completo user@realm!id=secret)
 #   PROXMOX_PVE2_ENDPOINT, PROXMOX_PVE2_API_TOKEN
 #   PACKER_SSH_PASSWORD (único; o hash para user-data é gerado no job com openssl passwd -6)
 #
-# Cada job corre no runner com label pve1-runner ou pve2-runner e usa a API desse host.
 name: Build Ubuntu Proxmox Template
 
 on:
