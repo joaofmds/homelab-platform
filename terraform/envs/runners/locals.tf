@@ -1,6 +1,6 @@
 locals {
-  # Two dedicated runner VMs (adjust VMIDs/IPs to your free addresses).
-  github_runners = {
+  # Nome do nó = hostname do servidor no Proxmox (árvore à esquerda). Os teus são pve1 e pve2.
+  github_runners_pve1 = {
     "gha-runner-pve1" = {
       proxmox_node = "pve1"
       vm_id        = 401
@@ -12,9 +12,12 @@ locals {
       disk_size_gb = 32
       extra_tags   = ["pve1-runner"]
     }
+  }
+
+  github_runners_pve2 = {
     "gha-runner-pve2" = {
       proxmox_node = "pve2"
-      vm_id        = 402
+      vm_id        = 401
       ipv4_address = "192.168.1.132"
       ipv4_gateway = "192.168.1.1"
       ipv4_prefix  = 24

@@ -6,7 +6,8 @@ proxmox_tls_insecure = true
 
 ssh_public_key = "ssh-ed25519 CHANGE_ME"
 
-# Optional overrides (defaults match a typical homelab Packer template).
+# Template a clonar (VMID). O default 9000 assume que já criaste a imagem
+# (ex.: Packer em packer/ubuntu-2404). Ajusta ao VMID real do teu Proxmox.
 # kubernetes_template_vm_id = 9000
 # kubernetes_dns_servers    = ["192.168.1.1", "1.1.1.1"]
 # kubernetes_datastore_id   = "local-lvm"
