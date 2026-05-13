@@ -16,3 +16,6 @@ github_actions_runner_name: "{{ inventory_hostname }}"
 
 # Set true to remove .runner and re-register (requires fresh API token).
 github_actions_runner_force_reregister: false
+
+# Owns install dir and runs config.sh / svc.sh. Must not be root (GitHub runner refuses).
+github_actions_runner_run_user: "{{ ansible_user }}"

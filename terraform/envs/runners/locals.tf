@@ -4,7 +4,7 @@ locals {
     "gha-runner-pve1" = {
       proxmox_node = "pve1"
       vm_id        = 401
-      ipv4_address = "192.168.1.131"
+      ipv4_address = "192.168.1.19"
       ipv4_gateway = "192.168.1.1"
       ipv4_prefix  = 24
       cpu_cores    = 2
@@ -18,7 +18,7 @@ locals {
     "gha-runner-pve2" = {
       proxmox_node = "pve2"
       vm_id        = 401
-      ipv4_address = "192.168.1.132"
+      ipv4_address = "192.168.1.18"
       ipv4_gateway = "192.168.1.1"
       ipv4_prefix  = 24
       cpu_cores    = 2

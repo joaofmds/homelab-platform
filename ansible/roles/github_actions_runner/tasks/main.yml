@@ -52,6 +52,14 @@
       - github_token | length > 0
     fail_msg: "Provide github_token when the runner is not yet registered (e.g. -e github_token=$GITHUB_TOKEN)."
 
+- name: Assert runner run user is not root
+  ansible.builtin.assert:
+    that:
+      - (github_actions_runner_run_user | lower) != 'root'
+    fail_msg: >-
+      github_actions_runner_run_user must not be root (GitHub ./config.sh refuses).
+      Set ansible_user in inventory or override github_actions_runner_run_user.
+
 - name: Install OS packages for runner
   ansible.builtin.apt:
     name:
@@ -67,8 +75,8 @@
   ansible.builtin.file:
     path: "{{ github_actions_runner_install_dir }}"
     state: directory
-    owner: root
-    group: root
+    owner: "{{ github_actions_runner_run_user }}"
+    group: "{{ github_actions_runner_run_user }}"
     mode: "0755"
 
 - name: Download actions-runner bundle
@@ -86,6 +94,17 @@
     dest: "{{ github_actions_runner_install_dir }}"
     remote_src: true
     creates: "{{ github_actions_runner_install_dir }}/config.sh"
+    owner: "{{ github_actions_runner_run_user }}"
+    group: "{{ github_actions_runner_run_user }}"
+
+- name: Ensure runner tree owned by run user (fixes partial runs as root)
+  when: github_actions_runner_needs_register | bool
+  ansible.builtin.file:
+    path: "{{ github_actions_runner_install_dir }}"
+    state: directory
+    owner: "{{ github_actions_runner_run_user }}"
+    group: "{{ github_actions_runner_run_user }}"
+    recurse: true
 
 - name: Request Actions runner registration token
   when: github_actions_runner_needs_register | bool
@@ -105,6 +124,7 @@
 
 - name: Configure runner (unattended)
   when: github_actions_runner_needs_register | bool
+  become_user: "{{ github_actions_runner_run_user }}"
   ansible.builtin.command:
     argv:
       - ./config.sh
@@ -127,6 +147,8 @@
     path: "{{ github_actions_runner_install_dir }}/.runner"
   register: github_actions_runner_stat_final
 
+# svc.sh install/start/stop must run as root ("Must run as sudo"); it still wires
+# the unit to the user that ran config.sh (runner tree owner).
 - name: Install systemd service for runner
   when: github_actions_runner_stat_final.stat.exists
   ansible.builtin.command:

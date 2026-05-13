@@ -1,3 +1,5 @@
 ---
+ansible_user: joaofmds
+
 github_actions_runner_github_owner: "joaofmds"
 github_actions_runner_github_repo: "homelab-platform"
