@@ -13,17 +13,17 @@ source "proxmox-iso" "ubuntu_2404" {
   token                    = var.proxmox_api_token_secret
   insecure_skip_tls_verify = true
 
-  node                   = var.proxmox_node
-  vm_id                  = var.template_id
-  vm_name                = var.template_name
-  template_description   = "Ubuntu 24.04 Kubernetes base image built with Packer"
+  node                 = var.proxmox_node
+  vm_id                = var.template_id
+  vm_name              = var.template_name
+  template_description = "Ubuntu 24.04 Kubernetes base image built with Packer"
 
   boot_iso {
-    type               = "ide"
-    iso_url            = var.iso_url
-    iso_checksum       = var.iso_checksum
-    iso_storage_pool   = var.iso_storage_pool
-    unmount            = true
+    type             = "ide"
+    iso_url          = var.iso_url
+    iso_checksum     = var.iso_checksum
+    iso_storage_pool = var.iso_storage_pool
+    unmount          = true
   }
 
   http_directory = "http"
