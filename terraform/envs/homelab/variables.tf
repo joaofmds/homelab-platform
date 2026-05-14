@@ -28,7 +28,20 @@ variable "proxmox_tls_insecure" {
 
 variable "ssh_public_key" {
   type        = string
-  description = "SSH public key passed to the kubernetes_nodes module for cloud-init."
+  description = "Uma ou mais linhas OpenSSH públicas (ex.: conteúdo de ~/.ssh/id_ed25519.pub). O Proxmox devolve HTTP 500 \"SSH public key validation error\" se for placeholder ou formato inválido."
+
+  validation {
+    condition = (
+      !can(regex("(?i)CHANGE_ME|EXAMPLE|placeholder", var.ssh_public_key)) &&
+      anytrue([
+        for line in split("\n", replace(var.ssh_public_key, "\r", "")) :
+        length(trimspace(line)) > 40 &&
+        can(regex("^(ssh-rsa|ssh-ed25519|ssh-ed448|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521)\\s+\\S+", trimspace(line)))
+        if length(trimspace(line)) > 0
+      ])
+    )
+    error_message = "Define ssh_public_key com pelo menos uma linha OpenSSH válida (ex.: saída de cat ~/.ssh/id_ed25519.pub). Evita placeholders; o Proxmox rejeita chaves inválidas com HTTP 500."
+  }
 }
 
 variable "kubernetes_template_vm_id" {

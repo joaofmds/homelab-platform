@@ -26,7 +26,7 @@ variable "nodes" {
 
 variable "ssh_public_key" {
   type        = string
-  description = "SSH public key injected via cloud-init for the VM admin user."
+  description = "OpenSSH public key(s), one non-empty line per key; passed to Proxmox cloud-init (trimmed). Invalid keys cause API error \"SSH public key validation error\"."
 }
 
 variable "clone_template_vm_id" {

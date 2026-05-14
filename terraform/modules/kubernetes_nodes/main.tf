@@ -1,3 +1,11 @@
+locals {
+  # Uma linha por chave; trim e ignora linhas vazias (evita erro de validação no Proxmox).
+  cloud_init_ssh_keys = compact([
+    for line in split("\n", replace(var.ssh_public_key, "\r", "")) : trimspace(line)
+    if length(trimspace(line)) > 0
+  ])
+}
+
 resource "proxmox_virtual_environment_vm" "node" {
   for_each = var.nodes
 
@@ -39,7 +47,7 @@ resource "proxmox_virtual_environment_vm" "node" {
   initialization {
     user_account {
       username = var.cloud_init_username
-      keys     = [var.ssh_public_key]
+      keys     = local.cloud_init_ssh_keys
     }
 
     ip_config {

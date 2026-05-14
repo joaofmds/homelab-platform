@@ -9,7 +9,7 @@ proxmox_pve2_api_token = "terraform@pve!github-actions=CHANGE_ME"
 # Prefer false when o certificado da API for confiável.
 proxmox_tls_insecure = true
 
-ssh_public_key = "ssh-ed25519 CHANGE_ME"
+ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILJr3MlpYhd8Eb2BgmrakB9v1QGv2wYhOAHdTY9kUZRy homelab-replace-with-your-pub"
 
 # Topologia em locals.tf: 1 control-plane (k8s-cp-01) + 2 workers (k8s-worker-01/02).
 # O campo proxmox_node por VM tem de ser "pve1" ou "pve2" (nome do nó no Proxmox).
