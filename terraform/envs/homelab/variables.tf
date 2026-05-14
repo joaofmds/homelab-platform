@@ -43,3 +43,9 @@ variable "kubernetes_network_bridge" {
   description = "Host bridge for node NICs."
   default     = "vmbr0"
 }
+
+variable "kubernetes_cloud_init_username" {
+  type        = string
+  description = "Linux user for cloud-init SSH keys; must exist on the cloned template (Packer autoinstall in this repo uses packer)."
+  default     = "packer"
+}

@@ -7,4 +7,5 @@ module "kubernetes_nodes" {
   dns_servers          = var.kubernetes_dns_servers
   datastore_id         = var.kubernetes_datastore_id
   network_bridge       = var.kubernetes_network_bridge
+  cloud_init_username  = var.kubernetes_cloud_init_username
 }

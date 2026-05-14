@@ -12,3 +12,5 @@ ssh_public_key = "ssh-ed25519 CHANGE_ME"
 # kubernetes_dns_servers    = ["192.168.1.1", "1.1.1.1"]
 # kubernetes_datastore_id   = "local-lvm"
 # kubernetes_network_bridge = "vmbr0"
+# Utilizador no template Packer deste repo (autoinstall); se mudares o template, ajusta.
+# kubernetes_cloud_init_username = "packer"
