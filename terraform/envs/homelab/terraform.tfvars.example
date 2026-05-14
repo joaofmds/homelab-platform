@@ -1,13 +1,20 @@
-proxmox_endpoint  = "https://192.168.1.10:8006/api2/json"
-proxmox_api_token = "terraform@pve!github-actions=CHANGE_ME"
+# Dois Proxmox independentes (mesmo padrão que terraform/envs/runners).
+# O path da API deve incluir /api2/json.
+proxmox_pve1_endpoint  = "https://192.168.1.10:8006/api2/json"
+proxmox_pve1_api_token = "terraform@pve!github-actions=CHANGE_ME"
 
-# Prefer false when the Proxmox API presents a trusted certificate.
+proxmox_pve2_endpoint  = "https://192.168.1.20:8006/api2/json"
+proxmox_pve2_api_token = "terraform@pve!github-actions=CHANGE_ME"
+
+# Prefer false when o certificado da API for confiável.
 proxmox_tls_insecure = true
 
 ssh_public_key = "ssh-ed25519 CHANGE_ME"
 
-# Template a clonar (VMID). O default 9000 assume que já criaste a imagem
-# (ex.: Packer em packer/ubuntu-2404). Ajusta ao VMID real do teu Proxmox.
+# Topologia em locals.tf: 1 control-plane (k8s-cp-01) + 2 workers (k8s-worker-01/02).
+# O campo proxmox_node por VM tem de ser "pve1" ou "pve2" (nome do nó no Proxmox).
+
+# Template a clonar (VMID) em **cada** host — o Packer deste repo usa 9000 nos dois.
 # kubernetes_template_vm_id = 9000
 # kubernetes_dns_servers    = ["192.168.1.1", "1.1.1.1"]
 # kubernetes_datastore_id   = "local-lvm"

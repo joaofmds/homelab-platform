@@ -9,7 +9,7 @@
 3. **Repositório e SSH**: `inventory/group_vars/runners.yml` define `github_actions_runner_github_*` e `ansible_user` (por omissão `joaofmds`, alinhado às VMs Packer; se usares `ubuntu`, altera aí ou por host em `hosts.yml`).
 4. **PAT**: cria um token clássico com scope `repo` (repositório privado) ou fine-grained com permissão de **Administration** no repositório, suficiente para `POST .../actions/runners/registration-token`. **Não** commites o token.
 
-5. **CI (GitHub Actions)**: para o plan/apply do stack `runners`, define no repositório os secrets `PROXMOX_PVE1_ENDPOINT`, `PROXMOX_PVE1_API_TOKEN`, `PROXMOX_PVE2_ENDPOINT`, `PROXMOX_PVE2_API_TOKEN` (além de `SSH_PUBLIC_KEY`). O stack `homelab` continua a usar `PROXMOX_ENDPOINT` e `PROXMOX_API_TOKEN` se forem um único alvo. O workflow **Build Ubuntu Proxmox Template** reutiliza os mesmos `PROXMOX_PVE{1,2}_*` e só o secret `PACKER_SSH_PASSWORD` (o hash para `user-data` é gerado no runner com `openssl passwd -6`; ver `.github/workflows/packer-build-ubuntu.yaml`).
+5. **CI (GitHub Actions)**: define no repositório `PROXMOX_PVE1_ENDPOINT`, `PROXMOX_PVE1_API_TOKEN`, `PROXMOX_PVE2_ENDPOINT`, `PROXMOX_PVE2_API_TOKEN` e `SSH_PUBLIC_KEY`. Os workflows **Terraform Plan/Apply** usam estes secrets tanto para `terraform/envs/homelab` como para `terraform/envs/runners`. O workflow **Build Ubuntu Proxmox Template** reutiliza os mesmos `PROXMOX_PVE{1,2}_*` e o secret `PACKER_SSH_PASSWORD` (o hash para `user-data` é gerado no runner com `openssl passwd -6`; ver `.github/workflows/packer-build-ubuntu.yaml`).
 
 ### Antes do playbook (rede)
 

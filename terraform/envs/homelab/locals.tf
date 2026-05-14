@@ -1,6 +1,7 @@
 locals {
-  # Homelab topology: edit here or move to a dedicated tfvars file as your workflow matures.
+  # 1 control-plane + 2 workers. proxmox_node = "pve1"|"pve2" escolhe o host (API em terraform.tfvars).
   kubernetes_nodes = {
+    # --- control-plane (único) ---
     "k8s-cp-01" = {
       proxmox_node = "pve1"
       vm_id        = 301
@@ -13,6 +14,7 @@ locals {
       disk_size_gb = 40
     }
 
+    # --- workers ---
     "k8s-worker-01" = {
       proxmox_node = "pve1"
       vm_id        = 311

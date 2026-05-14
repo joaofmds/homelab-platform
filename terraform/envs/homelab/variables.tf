@@ -1,12 +1,23 @@
-variable "proxmox_endpoint" {
+variable "proxmox_pve1_endpoint" {
   type        = string
-  description = "Proxmox API URL, for example https://pve.example.com:8006/api2/json"
+  description = "API do primeiro Proxmox (ex.: https://192.168.1.10:8006/api2/json). VMs com proxmox_node = pve1 em locals.tf."
 }
 
-variable "proxmox_api_token" {
+variable "proxmox_pve1_api_token" {
   type        = string
   sensitive   = true
-  description = "API token in the form USER@REALM!TOKEN_ID=SECRET"
+  description = "Token API do primeiro Proxmox (USER@REALM!TOKEN_ID=SECRET)."
+}
+
+variable "proxmox_pve2_endpoint" {
+  type        = string
+  description = "API do segundo Proxmox (ex.: https://192.168.1.20:8006/api2/json). VMs com proxmox_node = pve2 em locals.tf."
+}
+
+variable "proxmox_pve2_api_token" {
+  type        = string
+  sensitive   = true
+  description = "Token API do segundo Proxmox."
 }
 
 variable "proxmox_tls_insecure" {
