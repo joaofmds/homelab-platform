@@ -1,5 +1,6 @@
 ---
-kubernetes_minor_version: "1.31"
+# Repositório apt oficial: pkgs.k8s.io (core stable) para esta minor.
+kubernetes_minor_version: "1.36"
 k8s_pod_network_cidr: "10.244.0.0/16"
 k8s_cni_manifest_url: "https://github.com/flannel-io/flannel/releases/download/v0.25.5/kube-flannel.yml"
 kubernetes_package_hold: true

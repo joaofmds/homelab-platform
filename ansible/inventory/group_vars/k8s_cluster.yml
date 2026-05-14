@@ -3,6 +3,6 @@
 ansible_user: packer
 
 # Opcional: descomenta para fixar versão / CNI (os defaults estão na role kubernetes_kubeadm).
-# kubernetes_minor_version: "1.31"
+# kubernetes_minor_version: "1.36"
 # k8s_pod_network_cidr: "10.244.0.0/16"
 # k8s_apiserver_advertise_address: "{{ ansible_host }}"
