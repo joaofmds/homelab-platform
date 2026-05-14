@@ -11,9 +11,7 @@
     mode: "0755"
 
 - name: Generate default containerd config if missing
-  ansible.builtin.shell: |
-    set -euo pipefail
-    containerd config default > /etc/containerd/config.toml
+  ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
   args:
     creates: /etc/containerd/config.toml
 
