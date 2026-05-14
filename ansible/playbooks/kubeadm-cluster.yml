@@ -1,0 +1,9 @@
+---
+# Instala containerd, kubeadm/kubelet/kubectl, inicializa 1 control-plane e junta workers.
+# Pré-requisito: VMs criadas (Terraform homelab), SSH com sudo (template Packer: packer).
+# Corre sempre com o inventário completo do cluster (não uses --limit só workers).
+- name: Bootstrap Kubernetes cluster with kubeadm
+  hosts: k8s_cluster
+  gather_facts: true
+  roles:
+    - role: kubernetes_kubeadm

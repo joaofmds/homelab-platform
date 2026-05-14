@@ -45,6 +45,22 @@ export GITHUB_TOKEN=ghp_xxxx
 
 `--check` não é fiável para esta role (transferências, API GitHub, `config.sh`).
 
+## Kubernetes (kubeadm)
+
+1. **Terraform** (`terraform/envs/homelab`): `terraform apply` com template Packer (VMID 9000) e `kubernetes_cloud_init_username` = `packer` (default).
+2. **Inventário**: `inventory/hosts.yml` → grupo `k8s_cluster` (`k8s_control_plane` + `k8s_workers`). Ajusta `ansible_host` aos IPs reais (iguais a `locals.tf`).
+3. **Versão**: `roles/kubernetes_kubeadm/defaults/main.yml` → `kubernetes_minor_version` (repo `pkgs.k8s.io`). Alinha com a [matriz de versões](https://kubernetes.io/releases/) que queres.
+4. **CNI**: por omissão Flannel (`k8s_cni_manifest_url`); `k8s_pod_network_cidr` tem de ser compatível (default `10.244.0.0/16`).
+5. **Ordem**: não uses `--limit` só nos workers na primeira corrida — o control-plane tem de gerar o `kubeadm join` primeiro.
+
+```bash
+cd ansible
+.venv/bin/ansible-playbook --syntax-check -i inventory playbooks/kubeadm-cluster.yml
+.venv/bin/ansible-playbook -i inventory playbooks/kubeadm-cluster.yml
+```
+
+No control-plane: `kubectl --kubeconfig=/etc/kubernetes/admin.conf get nodes`. No teu PC: copia `admin.conf` (com cuidado) ou SSH com `-L` para `kubectl` local.
+
 ### Re-registar um runner
 
 Define `github_actions_runner_force_reregister: true` no host ou em extra-vars **e** fornece `github_token`. Remove o runner na UI do GitHub se ficar órfão.
@@ -59,3 +75,6 @@ Define `github_actions_runner_force_reregister: true` no host ou em extra-vars *
 | Job não arranca | O workflow precisa de `runs-on: [self-hosted, homelab]` e o runner tem de ter a label `homelab`. |
 | `./config.sh` / `config.sh` falha (rc≠0, `no_log`) | Com `become` global, o script não pode correr como **root**. A role usa `github_actions_runner_run_user` (`ansible_user`). Corrige dono de `github_actions_runner_install_dir` e volta a correr. |
 | `./svc.sh install` "Must run as sudo" | O `svc.sh` tem de correr como **root**; a role deixa de forçar `become_user` nessa tarefa. O `./config.sh` continua como `github_actions_runner_run_user`. |
+| Kubeadm / workers sem `kubeadm_join` | Corre o playbook para **todo** `k8s_cluster` (inclui o control-plane). |
+| `kubectl apply` CNI falha | Confirma `kubernetes_minor_version` e URL do Flannel; verifica `wait_for` 6443 no CP. |
+| Workers `NotReady` | Espera o CNI; `kubectl describe node` no CP. |

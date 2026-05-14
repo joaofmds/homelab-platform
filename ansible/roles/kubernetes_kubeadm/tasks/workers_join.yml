@@ -1,0 +1,26 @@
+---
+- name: Refresh kubeadm join command on primary control plane
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: kubeadm_join
+  when:
+    - "'k8s_control_plane' in group_names"
+    - inventory_hostname == (groups['k8s_control_plane'] | sort | first)
+  changed_when: false
+
+- name: Worker join phase
+  when: "'k8s_workers' in group_names"
+  block:
+    - name: Stat kubelet Kubernetes configuration
+      ansible.builtin.stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: k8s_kubelet_conf
+
+    - name: Join worker to cluster
+      when: not k8s_kubelet_conf.stat.exists
+      ansible.builtin.shell:
+        cmd: "{{ hostvars[k8s_primary].kubeadm_join.stdout | trim }}"
+        creates: /etc/kubernetes/kubelet.conf
+      vars:
+        k8s_primary: "{{ groups['k8s_control_plane'] | sort | first }}"
+      register: k8s_worker_join
+      changed_when: true

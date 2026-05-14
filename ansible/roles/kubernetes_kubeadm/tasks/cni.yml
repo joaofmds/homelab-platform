@@ -1,0 +1,14 @@
+---
+- name: Apply CNI (primary control plane only)
+  when:
+    - "'k8s_control_plane' in group_names"
+    - inventory_hostname == (groups['k8s_control_plane'] | sort | first)
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig=/etc/kubernetes/admin.conf
+      - apply
+      - -f
+      - "{{ k8s_cni_manifest_url }}"
+  register: k8s_cni_apply
+  changed_when: true

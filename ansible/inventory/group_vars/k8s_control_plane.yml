@@ -1,0 +1,3 @@
+---
+# Endereço que o apiserver anuncia (deve ser alcançável pelos workers).
+k8s_apiserver_advertise_address: "{{ ansible_host }}"
